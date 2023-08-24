@@ -22,20 +22,21 @@ func main() {
 	sum0 := 0.0
 	theta0 := 0.0
 	theta1 := 0.0
-	learning_rate := 0.001
-	// for i := 0; i < 1000; i++ {
-	sum1 = 0.0
-	sum0 = 0.0
-	for _, point := range xys {
-		sum0 += (theta0 + theta1*point.X) - point.Y
-		sum1 += ((theta0 + theta1*point.X) - point.Y) * point.X
+	learning_rate := 0.5
+	for i := 0; i < 1000; i++ {
+		sum1 = 0.0
+		sum0 = 0.0
+		for _, point := range xys {
+			sum0 += (theta0 + theta1*point.X) - point.Y
+			sum1 += ((theta0 + theta1*point.X) - point.Y) * point.X
+		}
+		theta0 -= learning_rate * (1.0 / float64(xys.Len())) * sum0
+		theta1 -= learning_rate * (1.0 / float64(xys.Len())) * sum1
 	}
-	theta0 = learning_rate * 1.0 / float64(xys.Len()) * sum0
-	theta1 = learning_rate * 1.0 / float64(xys.Len()) * sum1
-	// }
-	// theta0 *= divisor_x
-	// theta1 *= (divisor_x / divisor_y)
-	fmt.Println(divisor_x / divisor_y)
+	theta0 *= divisor_y
+	theta1 *= (divisor_y / divisor_x)
+	fmt.Println(divisor_x)
+	fmt.Println(divisor_y)
 	fmt.Println("theta0: ", theta0)
 	fmt.Println("theta1: ", theta1)
 	fmt.Println("price for 42000: ", theta0+theta1*42000)
@@ -51,7 +52,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = plotData(render_file, theta0, theta1, xys)
+	var scaled_xys plotter.XYs
+	for _, point := range xys {
+		scaled_xys = append(scaled_xys, struct{ X, Y float64 }{point.X * divisor_x, point.Y * divisor_y})
+	}
+	err = plotData(render_file, theta0, theta1, scaled_xys)
 	if err != nil {
 		log.Fatalf("Could not plot data: %v", err)
 	}
@@ -136,8 +141,8 @@ func readData(path string) (plotter.XYs, float64, float64, error) {
 
 	vec_x := mat.NewVecDense(len(x_array), x_array)
 	vec_y := mat.NewVecDense(len(y_array), y_array)
-	divisor_x := mat.Norm(vec_x, 2) / float64(len(x_array))
-	divisor_y := mat.Norm(vec_y, 2) / float64(len(y_array))
+	divisor_x := mat.Norm(vec_x, 2)
+	divisor_y := mat.Norm(vec_y, 2)
 
 	var xys plotter.XYs
 	for _, point := range tmp_xys {
