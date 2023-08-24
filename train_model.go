@@ -22,19 +22,20 @@ func main() {
 	sum0 := 0.0
 	theta0 := 0.0
 	theta1 := 0.0
-	learning_rate := 0.01
-	for i := 1; i <= 1000; i++ {
-		sum1 = 0.0
-		sum0 = 0.0
-		for _, point := range xys {
-			sum0 += (theta0 + theta1*point.X) - point.Y
-			sum1 += ((theta0 + theta1*point.X) - point.Y) * point.X
-		}
-		theta0 = learning_rate * 1.0 / float64(xys.Len()) * sum0
-		theta1 = learning_rate * 1.0 / float64(xys.Len()) * sum1
+	learning_rate := 0.001
+	// for i := 0; i < 1000; i++ {
+	sum1 = 0.0
+	sum0 = 0.0
+	for _, point := range xys {
+		sum0 += (theta0 + theta1*point.X) - point.Y
+		sum1 += ((theta0 + theta1*point.X) - point.Y) * point.X
 	}
-	theta0 *= divisor_x
-	theta1 *= divisor_y
+	theta0 = learning_rate * 1.0 / float64(xys.Len()) * sum0
+	theta1 = learning_rate * 1.0 / float64(xys.Len()) * sum1
+	// }
+	// theta0 *= divisor_x
+	// theta1 *= (divisor_x / divisor_y)
+	fmt.Println(divisor_x / divisor_y)
 	fmt.Println("theta0: ", theta0)
 	fmt.Println("theta1: ", theta1)
 	fmt.Println("price for 42000: ", theta0+theta1*42000)
@@ -50,14 +51,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = plotData(render_file, xys)
+	err = plotData(render_file, theta0, theta1, xys)
 	if err != nil {
 		log.Fatalf("Could not plot data: %v", err)
 	}
 
 }
 
-func plotData(file string, pxys plotter.XYs) error {
+func plotData(file string, theta0 float64, theta1 float64, pxys plotter.XYs) error {
 	f, err := os.Create(file)
 	if err != nil {
 		return fmt.Errorf("could not create data.png: %v", err)
@@ -72,27 +73,19 @@ func plotData(file string, pxys plotter.XYs) error {
 	}
 	p.Add(s)
 
-	maxY := math.Inf(-1)
 	maxX := math.Inf(-1)
 	minX := math.Inf(1)
-	minY := math.Inf(1)
 	for _, point := range pxys {
-		if point.Y > maxY {
-			maxY = point.Y
-		}
 		if point.X > maxX {
 			maxX = point.X
 		}
 		if point.X < minX {
 			minX = point.X
 		}
-		if point.Y < minY {
-			minY = point.Y
-		}
 	}
 	l, err := plotter.NewLine(plotter.XYs{
-		{X: minX, Y: maxY},
-		{X: maxX, Y: minY},
+		{X: minX, Y: theta0 + (theta1 * minX)},
+		{X: maxX, Y: theta0 + (theta1 * maxX)},
 	})
 	if err != nil {
 		return fmt.Errorf("could not create line: %v", err)
