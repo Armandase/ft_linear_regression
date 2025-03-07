@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import argparse
-from utils import normalize_data, plot_data, precision, write_theta
+from utils import normalize_data, plot_data, precision, write_theta, ols_computation
 
 def train_theta(data, norm_x, norm_y, iteration=1000, learning_rate=0.5, early_stop=0.0000001):
     theta0, theta1 = 0, 0
@@ -28,7 +28,7 @@ def train_theta(data, norm_x, norm_y, iteration=1000, learning_rate=0.5, early_s
     theta1 = theta1 * (norm_y / norm_x)
     return theta0, theta1
 
-def main(data_path: str, learning_rate: float, iteration: int, early_stop: float):
+def main(data_path: str, learning_rate: float, iteration: int, early_stop: float, ols: bool):
     try:
         data = pd.read_csv(data_path)
     except Exception as e:
@@ -44,12 +44,15 @@ def main(data_path: str, learning_rate: float, iteration: int, early_stop: float
     data_noramlized[header1], norm_x = normalize_data(data[header1])
     data_noramlized[header2], norm_y = normalize_data(data[header2])
 
+    if ols:
+        ols_computation(data_noramlized[header1], data_noramlized[header2])
+
     theta0, theta1 = train_theta(np.array(data_noramlized), norm_x, norm_y, iteration, learning_rate, early_stop)
     write_theta(theta0, theta1)
     predict = data[header1] * theta1 + theta0
     plot_data(data, header1, header2, predict)
-    precision(theta0, theta1, data[header1], data[header2])
-    
+    precis = precision(theta0, theta1, data[header1], data[header2])
+    print("The precision is", '%.4f'%precis, "%")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,6 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", "-lr", help="the learning speed ", type=float, default=0.5)
     parser.add_argument("--iteration", "-i", help="the number of iteration for the training", type=int, default=1000)
     parser.add_argument("--early_stop", "-e", help="Use this to stop the training if the difference between two iterations exceeds early_stop", type=float, default=0.0000001)
+    parser.add_argument('--ols', default=False, action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
-    main(data_path=args.data_path, learning_rate=args.learning_rate, iteration=args.iteration, early_stop=args.early_stop)
+    main(data_path=args.data_path, learning_rate=args.learning_rate, iteration=args.iteration, early_stop=args.early_stop, ols=args.ols)
